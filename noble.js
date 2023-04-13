@@ -1,12 +1,13 @@
 const express = require('express')
 const app = express()
 const port = 3000
+var jwt = require('jsonwebtoken');
 
 app.get('/', (req, res) => {
   res.send('Hello UTeM!')
 })
 
-app.get('/bruh', (req, res) => {
+app.get('/bruh',verifyToken, (req, res) => {
   res.send(
     "Hello Dragon!"
   )
@@ -25,12 +26,16 @@ app.use(express.json())
 app.post('/login', (req, res) => {
   console.log(req.body)
 
-  let result = login(req.body.username, req.body.password)
-
-  res.send(result)
+  let result = login(
+    req.body.username, 
+    req.body.password
+    )
+  
+  let token = generateToken(result)
+  res.send(token)
 })
 
-app.get('/shxtou', (req, res) => {
+app.get('/shxtou',verifyToken, (req, res) => {
   res.sendFile(__dirname + '/shxtouMagnify.png');
 })
 
@@ -85,4 +90,27 @@ function register(reqUsername,reqPassword,reqName,reqEmail){
       name: reqName,
       email: reqEmail
   })
+}
+
+function generateToken(userData){
+  const token = jwt.sign(
+    userData, 
+    'inipassword',
+    {expiresIn: 60});
+  return token
+}
+
+function verifyToken(req,res,next){
+  let header = req.headers.authorization
+  console.log(header)
+
+  let token = header.split(' ')[1]
+
+  jwt.verify(token,'inipassword',function(err,decoded){
+    if(err) {
+      res.send("invalid Token")
+    }
+    req.user = decoded
+    next()
+  });
 }
